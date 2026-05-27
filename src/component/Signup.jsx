@@ -30,7 +30,7 @@ const Signup = () => {
 
     try {
       const res = await axios.post(
-        `${BASE_URL}/auth/v1/signup`,
+        `${BASE_URL}auth/v1/signup`,
         form
       );
 
