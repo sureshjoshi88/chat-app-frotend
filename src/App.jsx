@@ -5,16 +5,14 @@ import Login from './component/Login'
 import Signup from './component/Signup'
 import ProtectedRoute from './component/ProtectedRoute'
 import { Suspense } from 'react'
+import { ToastContainer } from 'react-toastify'
 
 function App() {
   
   return (
     <>
      <p className='text-3xl text-orange-400 m-3'>jai shree ram</p>  
-    {/* <Home/>
-    <Login/>
-    <Signup/> */}
-
+                <ToastContainer />
        <Suspense
         fallback={
           <div className="flex justify-center items-center h-screen fw-bold">

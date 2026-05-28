@@ -3,6 +3,8 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/authProvider";
 const BASE_URL = import.meta.env.VITE_BASE_URL;
+import {  toast } from 'react-toastify';
+
 
 const Signup = () => {
   const [form, setForm] = useState({
@@ -30,24 +32,29 @@ const Signup = () => {
 
     try {
       const res = await axios.post(
-        `${BASE_URL}auth/v1/signup`,
+        `${BASE_URL}auth/signup`,
         form
       );
 
-      setMessage(res.data.message);
-      console.log(res.data);
-      // localStorage.setItem("token",JSON.stringify(res.data.token))
-      // localStorage.setItem("user",JSON.stringify(res.data.user))
+       if (res.data.success) {
+      toast.success("Signup Successfully");
       login(res?.data?.token, res?.data?.user)
-
-      navigate("/")
+      navigate("/login")
+    } else {
+      toast.error(res.data.message);
+    }
+      setMessage(res.data.message);
 
     } catch (error) {
-      setMessage(error.response?.data?.message || "Error");
+      setMessage(error.response?.data?.message || "Server Error");
+      toast.error(error.response?.data?.message || "Server error");
     }
   };
 
   return (
+    <>
+
+  
     <div className="flex justify-center items-center h-screen bg-gray-100">
 
       <form
@@ -104,6 +111,7 @@ const Signup = () => {
         )}
       </form>
     </div>
+      </>
   );
 };
 

@@ -16,14 +16,21 @@ const Home = () => {
     const [selectedUser, setSelectedUser] = useState(null);
     const [onlineUsers, setOnlineUsers] = useState([]);
     const [users, setUsers] = useState([]);
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Mobile responsive sidebar toggle
-    const [searchQuery, setSearchQuery] = useState(""); // Search functionality ka state
-
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
     const { logout, isAuthenticated } = useAuth();
     const typingTimeout = useRef(null);
-    const messagesEndRef = useRef(null); // Smooth auto-scroll ke liye ref
+    const messagesEndRef = useRef(null);
 
-    // Safe user parsing from localStorage
+
+    const notificationSound = useRef(null);
+
+    useEffect(() => {
+        notificationSound.current = new Audio("/notifaction.wav");
+
+        notificationSound.current.load();
+    }, []);
+
     const user = useMemo(() => {
         try {
             return JSON.parse(localStorage.getItem("user"));
@@ -65,6 +72,14 @@ const Home = () => {
 
         socket.on("receive_message", (data) => {
             setChat((prev) => [...prev, { ...data, seen: data.seen || false }]);
+            if (data.senderId?.toString() !== user?._id) {
+
+                notificationSound.current.currentTime = 0;
+
+                notificationSound.current.play()
+                    .catch((err) => console.log(err));
+
+            }
         });
 
         socket.on("message_seen_update", (messageId) => {
@@ -81,6 +96,23 @@ const Home = () => {
         };
     }, []);
 
+useEffect(() => {
+
+    const unlockAudio = () => {
+
+        notificationSound.current.play()
+            .then(() => {
+                notificationSound.current.pause();
+                notificationSound.current.currentTime = 0;
+            })
+            .catch(() => {});
+
+        document.removeEventListener("click", unlockAudio);
+    };
+
+    document.addEventListener("click", unlockAudio);
+
+}, []);
     // 4. Context-Aware Typing Listeners (Saves multi-user glitch)
     useEffect(() => {
         const handleUserTyping = (data) => {
@@ -144,7 +176,7 @@ const Home = () => {
 
     useEffect(() => {
         if (!user?._id) return;
-        
+
         filteredChats.forEach((msg) => {
             if (msg.receiverId?.toString() === user._id && !msg.seen) {
                 socket.emit("message_seen", {
@@ -207,10 +239,10 @@ const Home = () => {
 
     return (
         <div className="flex h-screen bg-slate-50 text-slate-800 font-sans antialiased overflow-hidden">
-            
+
             {/* Backdrop Overlay for Mobile Screen Navigation */}
             {isSidebarOpen && (
-                <div 
+                <div
                     className="fixed inset-0 bg-slate-900/40 z-20 md:hidden backdrop-blur-sm transition-all duration-300"
                     onClick={() => setIsSidebarOpen(false)}
                 />
@@ -272,26 +304,24 @@ const Home = () => {
                             filteredUsersList.map((u) => {
                                 const isSelected = selectedUser?._id === u._id;
                                 const isOnline = onlineUsers.includes(u._id.toString());
-                                
+
                                 return (
                                     <div
                                         key={u._id}
-                                        className={`p-3 rounded-xl cursor-pointer flex justify-between items-center transition-all duration-150 group ${
-                                            isSelected
+                                        className={`p-3 rounded-xl cursor-pointer flex justify-between items-center transition-all duration-150 group ${isSelected
                                                 ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/10"
                                                 : "hover:bg-slate-900 text-slate-400 hover:text-slate-200"
-                                        }`}
+                                            }`}
                                         onClick={() => {
                                             setSelectedUser(u);
                                             setIsSidebarOpen(false);
                                         }}
                                     >
                                         <div className="flex items-center gap-3 truncate">
-                                            <div className={`h-9 w-9 rounded-xl flex items-center justify-center font-bold text-sm border transition-colors ${
-                                                isSelected 
-                                                    ? 'bg-indigo-500 border-indigo-400/30 text-white' 
+                                            <div className={`h-9 w-9 rounded-xl flex items-center justify-center font-bold text-sm border transition-colors ${isSelected
+                                                    ? 'bg-indigo-500 border-indigo-400/30 text-white'
                                                     : 'bg-slate-900 border-slate-800 group-hover:border-slate-700 text-slate-300'
-                                            }`}>
+                                                }`}>
                                                 {u.name ? u.name[0].toUpperCase() : '?'}
                                             </div>
                                             <span className="font-medium text-sm truncate">{u.name}</span>
@@ -318,13 +348,13 @@ const Home = () => {
                 {/* Navbar Action Control Header */}
                 <div className="bg-white/80 backdrop-blur-md px-6 py-3.5 border-b border-slate-200/80 flex justify-between items-center shadow-sm z-10 flex-shrink-0">
                     <div className="flex items-center gap-3 overflow-hidden">
-                        <button 
+                        <button
                             className="md:hidden p-1.5 text-slate-600 hover:bg-slate-100 rounded-xl mr-0.5 transition-colors"
                             onClick={() => setIsSidebarOpen(true)}
                         >
                             <Menu size={20} />
                         </button>
-                        
+
                         <div className="truncate">
                             <h3 className="font-bold text-slate-800 text-base md:text-lg tracking-tight truncate">
                                 {selectedUser ? selectedUser.name : "Open a workspace"}
@@ -342,11 +372,11 @@ const Home = () => {
                             )}
                         </div>
                     </div>
-                    
+
                     {isAuthenticated && (
                         <div className="flex-shrink-0">
-                            <button 
-                                onClick={logout} 
+                            <button
+                                onClick={logout}
                                 className="flex items-center gap-2 bg-white hover:bg-red-50 text-slate-600 hover:text-red-600 py-1.5 px-3.5 rounded-xl cursor-pointer font-semibold text-xs transition-all duration-150 border border-slate-200 hover:border-red-200 shadow-sm active:scale-95"
                             >
                                 <LogOut size={14} />
@@ -354,6 +384,7 @@ const Home = () => {
                             </button>
                         </div>
                     )}
+   
                 </div>
 
                 {/* Scrollable Feed Space Area */}
@@ -378,19 +409,18 @@ const Home = () => {
                                     className={`flex flex-col max-w-[80%] md:max-w-md ${isMe ? "ml-auto items-end" : "mr-auto items-start"}`}
                                 >
                                     <div
-                                        className={`px-4 py-2.5 shadow-sm border text-[14.5px] leading-relaxed break-words transition-all duration-150 ${
-                                            isMe
+                                        className={`px-4 py-2.5 shadow-sm border text-[14.5px] leading-relaxed break-words transition-all duration-150 ${isMe
                                                 ? "bg-indigo-600 text-white border-indigo-600 rounded-2xl rounded-tr-none"
                                                 : "bg-white text-slate-800 border-slate-200/90 rounded-2xl rounded-tl-none"
-                                        }`}
+                                            }`}
                                     >
                                         <p>{msg.text}</p>
                                     </div>
-                                    
+
                                     {/* Bubble Info Timestamp Badge */}
                                     <div className="flex items-center gap-1.5 mt-1 px-1">
                                         <p className="text-[10px] text-slate-400 font-medium">
-                                            {new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </p>
                                         {isMe && msg.senderId?.toString() === user?._id && (
                                             <span className={msg.seen ? "text-indigo-500" : "text-slate-400"}>
@@ -420,7 +450,7 @@ const Home = () => {
                 )}
 
                 {/* Input form controller component block */}
-                <form 
+                <form
                     onSubmit={(e) => {
                         e.preventDefault();
                         sendMessage();
