@@ -6,7 +6,6 @@ import { Check, CheckCheck, Menu, X, Search, LogOut } from 'lucide-react';
 const BASE_URL = import.meta.env.VITE_BASE_URL;
 const BASE_URL_SOCKET = import.meta.env.VITE_BASE_URL_SOCKET;
 
-// Socket connection component ke bhaar ek baar hi initialize hona chahiye
 const socket = io(`${BASE_URL_SOCKET}`);
 
 const Home = () => {
@@ -21,6 +20,9 @@ const Home = () => {
     const { logout, isAuthenticated } = useAuth();
     const typingTimeout = useRef(null);
     const messagesEndRef = useRef(null);
+
+    const [lastMessages, setLastMessages] = useState({});
+    const [unreadCounts, setUnreadCounts] = useState({});
 
 
     const notificationSound = useRef(null);
@@ -80,6 +82,27 @@ const Home = () => {
                     .catch((err) => console.log(err));
 
             }
+
+            const otherUserId =
+                data.senderId?.toString() === user?._id?.toString()
+                    ? data.receiverId
+                    : data.senderId;
+
+            setLastMessages((prev) => ({
+                ...prev,
+                [otherUserId]: data.text
+            }));
+
+            if (
+                data.senderId?.toString() !== user?._id?.toString() &&
+                selectedUser?._id?.toString() !== data.senderId?.toString()) {
+
+                setUnreadCounts((prev) => ({
+                    ...prev,
+                    [data.senderId]: (prev[data.senderId] || 0) + 1
+                }));
+
+            }
         });
 
         socket.on("message_seen_update", (messageId) => {
@@ -96,23 +119,23 @@ const Home = () => {
         };
     }, []);
 
-useEffect(() => {
+    useEffect(() => {
 
-    const unlockAudio = () => {
+        const unlockAudio = () => {
 
-        notificationSound.current.play()
-            .then(() => {
-                notificationSound.current.pause();
-                notificationSound.current.currentTime = 0;
-            })
-            .catch(() => {});
+            notificationSound.current.play()
+                .then(() => {
+                    notificationSound.current.pause();
+                    notificationSound.current.currentTime = 0;
+                })
+                .catch(() => { });
 
-        document.removeEventListener("click", unlockAudio);
-    };
+            document.removeEventListener("click", unlockAudio);
+        };
 
-    document.addEventListener("click", unlockAudio);
+        document.addEventListener("click", unlockAudio);
 
-}, []);
+    }, []);
     // 4. Context-Aware Typing Listeners (Saves multi-user glitch)
     useEffect(() => {
         const handleUserTyping = (data) => {
@@ -231,11 +254,43 @@ useEffect(() => {
     };
 
     // Users filtering logic based on Search input
+    // const filteredUsersList = useMemo(() => {
+    //     return users
+    //         ?.filter((u) => u._id !== user?._id)
+    //         ?.filter((u) => u.name?.toLowerCase().includes(searchQuery.toLowerCase()));
+    // }, [users, user?._id, searchQuery]);
     const filteredUsersList = useMemo(() => {
-        return users
+
+        return [...users]
             ?.filter((u) => u._id !== user?._id)
-            ?.filter((u) => u.name?.toLowerCase().includes(searchQuery.toLowerCase()));
-    }, [users, user?._id, searchQuery]);
+            ?.filter((u) =>
+                u.name?.toLowerCase()
+                    .includes(searchQuery.toLowerCase())
+            )
+            ?.sort((a, b) => {
+
+                const aMsg = chat
+                    .filter(
+                        (m) =>
+                            m.senderId === a._id ||
+                            m.receiverId === a._id
+                    )
+                    .slice(-1)[0];
+
+                const bMsg = chat
+                    .filter(
+                        (m) =>
+                            m.senderId === b._id ||
+                            m.receiverId === b._id
+                    )
+                    .slice(-1)[0];
+
+                return new Date(bMsg?.createdAt || 0)
+                    - new Date(aMsg?.createdAt || 0);
+
+            });
+
+    }, [users, user?._id, searchQuery, chat]);
 
     return (
         <div className="flex h-screen bg-slate-50 text-slate-800 font-sans antialiased overflow-hidden">
@@ -309,23 +364,50 @@ useEffect(() => {
                                     <div
                                         key={u._id}
                                         className={`p-3 rounded-xl cursor-pointer flex justify-between items-center transition-all duration-150 group ${isSelected
-                                                ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/10"
-                                                : "hover:bg-slate-900 text-slate-400 hover:text-slate-200"
+                                            ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/10"
+                                            : "hover:bg-slate-900 text-slate-400 hover:text-slate-200"
                                             }`}
                                         onClick={() => {
+
                                             setSelectedUser(u);
+
+                                            // unread clear
+                                            setUnreadCounts((prev) => ({
+                                                ...prev,
+                                                [u._id]: 0
+                                            }));
+
                                             setIsSidebarOpen(false);
+
                                         }}
                                     >
-                                        <div className="flex items-center gap-3 truncate">
-                                            <div className={`h-9 w-9 rounded-xl flex items-center justify-center font-bold text-sm border transition-colors ${isSelected
+                                        <div className="flex items-center gap-3 flex-1 overflow-hidden">
+
+                                            <div
+                                                className={`h-9 w-9 rounded-xl flex items-center justify-center font-bold text-sm border transition-colors ${isSelected
                                                     ? 'bg-indigo-500 border-indigo-400/30 text-white'
                                                     : 'bg-slate-900 border-slate-800 group-hover:border-slate-700 text-slate-300'
-                                                }`}>
+                                                    }`}
+                                            >
                                                 {u.name ? u.name[0].toUpperCase() : '?'}
                                             </div>
-                                            <span className="font-medium text-sm truncate">{u.name}</span>
+
+                                            <div className="flex flex-col overflow-hidden">
+                                                <span className="font-medium text-sm truncate">
+                                                    {u.name}
+                                                </span>
+
+                                                <span className="text-xs text-slate-400 truncate">
+                                                    {lastMessages[u._id] || "No messages yet"}
+                                                </span>
+                                            </div>
+
                                         </div>
+                                        {unreadCounts[u._id] > 0 && (
+                                            <span className="bg-red-500 text-white text-[10px] min-w-5 h-5 px-1 rounded-full flex items-center justify-center font-bold">
+                                                {unreadCounts[u._id]}
+                                            </span>
+                                        )}
 
                                         {/* Dynamic Pulsing Status Light */}
                                         <span className="relative flex h-2 w-2 ml-2 flex-shrink-0">
@@ -384,7 +466,7 @@ useEffect(() => {
                             </button>
                         </div>
                     )}
-   
+
                 </div>
 
                 {/* Scrollable Feed Space Area */}
@@ -410,8 +492,8 @@ useEffect(() => {
                                 >
                                     <div
                                         className={`px-4 py-2.5 shadow-sm border text-[14.5px] leading-relaxed break-words transition-all duration-150 ${isMe
-                                                ? "bg-indigo-600 text-white border-indigo-600 rounded-2xl rounded-tr-none"
-                                                : "bg-white text-slate-800 border-slate-200/90 rounded-2xl rounded-tl-none"
+                                            ? "bg-indigo-600 text-white border-indigo-600 rounded-2xl rounded-tr-none"
+                                            : "bg-white text-slate-800 border-slate-200/90 rounded-2xl rounded-tl-none"
                                             }`}
                                     >
                                         <p>{msg.text}</p>
