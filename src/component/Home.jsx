@@ -3,6 +3,8 @@ import io from "socket.io-client";
 import axios from "axios";
 import { useAuth } from "../context/authProvider";
 import { Check, CheckCheck, Menu, X, Search, LogOut } from 'lucide-react';
+import EmojiPicker from "emoji-picker-react";
+import { Smile } from "lucide-react";
 const BASE_URL = import.meta.env.VITE_BASE_URL;
 const BASE_URL_SOCKET = import.meta.env.VITE_BASE_URL_SOCKET;
 
@@ -17,15 +19,16 @@ const Home = () => {
     const [users, setUsers] = useState([]);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
-    const { logout, isAuthenticated } = useAuth();
-    const typingTimeout = useRef(null);
-    const messagesEndRef = useRef(null);
-
     const [lastMessages, setLastMessages] = useState({});
     const [unreadCounts, setUnreadCounts] = useState({});
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
 
+    const messagesEndRef = useRef(null);
+    const typingTimeout = useRef(null);
+    const { logout, isAuthenticated } = useAuth();
     const notificationSound = useRef(null);
+    const emojiPickerRef = useRef(null);
 
     useEffect(() => {
         notificationSound.current = new Audio("/notifaction.wav");
@@ -233,6 +236,11 @@ const Home = () => {
         }, 1200);
     };
 
+    const handleEmojiClick = (emojiData) => {
+        setMessage((prev) => prev + emojiData.emoji);
+        // setShowEmojiPicker(false);
+    };
+
     // 10. Send Action Handler
     const sendMessage = () => {
         if (!selectedUser) {
@@ -253,12 +261,7 @@ const Home = () => {
         setMessage("");
     };
 
-    // Users filtering logic based on Search input
-    // const filteredUsersList = useMemo(() => {
-    //     return users
-    //         ?.filter((u) => u._id !== user?._id)
-    //         ?.filter((u) => u.name?.toLowerCase().includes(searchQuery.toLowerCase()));
-    // }, [users, user?._id, searchQuery]);
+
     const filteredUsersList = useMemo(() => {
 
         return [...users]
@@ -291,6 +294,27 @@ const Home = () => {
             });
 
     }, [users, user?._id, searchQuery, chat]);
+
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (
+                emojiPickerRef.current &&
+                !emojiPickerRef.current.contains(event.target)
+            ) {
+                setShowEmojiPicker(false);
+            }
+        };
+
+        document.addEventListener("mousedown", handleClickOutside);
+
+        return () => {
+            document.removeEventListener(
+                "mousedown",
+                handleClickOutside
+            );
+        };
+    }, []);
 
     return (
         <div className="flex h-screen bg-slate-50 text-slate-800 font-sans antialiased overflow-hidden">
@@ -532,14 +556,35 @@ const Home = () => {
                 )}
 
                 {/* Input form controller component block */}
-                <form
+             {selectedUser  &&  <form
                     onSubmit={(e) => {
                         e.preventDefault();
                         sendMessage();
                     }}
                     className="p-4 bg-white border-t border-slate-200/80 backdrop-blur-md flex-shrink-0"
                 >
-                    <div className="flex items-center gap-2 max-w-7xl mx-auto bg-slate-100 p-1.5 rounded-2xl border border-slate-200/40 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/10 focus-within:bg-white transition-all duration-200">
+                    <div className=" relative flex items-center gap-2 max-w-7xl mx-auto bg-slate-100 p-1.5 rounded-2xl border border-slate-200/40 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/10 focus-within:bg-white transition-all duration-200">
+
+
+                        <button
+                            type="button"
+                            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                            className="p-2 text-slate-500 hover:text-indigo-600"
+                        >
+                            <Smile size={20} />
+                        </button>
+                        {showEmojiPicker && (
+                            <div
+                                ref={emojiPickerRef}
+                                className="absolute bottom-14 left-0 z-50"
+                            >
+                                <EmojiPicker
+                                    onEmojiClick={handleEmojiClick}
+                                    width={300}
+                                    height={400}
+                                />
+                            </div>
+                        )}
                         <input
                             value={message}
                             onChange={handleTyping}
@@ -555,7 +600,8 @@ const Home = () => {
                             Send
                         </button>
                     </div>
-                </form>
+                </form>}
+
 
             </div>
         </div>
