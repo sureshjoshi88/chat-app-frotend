@@ -5,6 +5,7 @@ import { useAuth } from "../context/authProvider";
 import { Check, CheckCheck, Menu, X, Search, LogOut } from 'lucide-react';
 import EmojiPicker from "emoji-picker-react";
 import { Smile } from "lucide-react";
+import useTimeFormat from "../hook/useTimeFormat";
 const BASE_URL = import.meta.env.VITE_BASE_URL;
 const BASE_URL_SOCKET = import.meta.env.VITE_BASE_URL_SOCKET;
 
@@ -29,6 +30,9 @@ const Home = () => {
     const { logout, isAuthenticated } = useAuth();
     const notificationSound = useRef(null);
     const emojiPickerRef = useRef(null);
+
+    const { formatTime } = useTimeFormat();
+
 
     useEffect(() => {
         notificationSound.current = new Audio("/notifaction.wav");
@@ -526,7 +530,8 @@ const Home = () => {
                                     {/* Bubble Info Timestamp Badge */}
                                     <div className="flex items-center gap-1.5 mt-1 px-1">
                                         <p className="text-[10px] text-slate-400 font-medium">
-                                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            {/* {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} */}
+                                            {formatTime(msg.createdAt)}
                                         </p>
                                         {isMe && msg.senderId?.toString() === user?._id && (
                                             <span className={msg.seen ? "text-indigo-500" : "text-slate-400"}>
@@ -556,7 +561,7 @@ const Home = () => {
                 )}
 
                 {/* Input form controller component block */}
-             {selectedUser  &&  <form
+                {selectedUser && <form
                     onSubmit={(e) => {
                         e.preventDefault();
                         sendMessage();
