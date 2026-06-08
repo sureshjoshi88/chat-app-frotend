@@ -11,7 +11,7 @@ function App() {
   
   return (
     <>
-     <p className='text-3xl text-orange-400 m-3'>jai shree ram</p>  
+     <p className='text-sm text-orange-400 m-3 text-center'>jai shree ram</p>  
                 <ToastContainer />
        <Suspense
         fallback={

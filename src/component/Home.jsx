@@ -24,6 +24,8 @@ const Home = () => {
     const [unreadCounts, setUnreadCounts] = useState({});
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
+    const [loadingUsers, setLoadingUsers] = useState(true);
+
 
     const messagesEndRef = useRef(null);
     const typingTimeout = useRef(null);
@@ -53,10 +55,14 @@ const Home = () => {
     useEffect(() => {
         const fetchUsers = async () => {
             try {
+                setLoadingUsers(true);
                 const res = await axios.get(`${BASE_URL}user`);
+                setLoadingUsers(false)
                 setUsers(res?.data?.user || []);
             } catch (err) {
                 console.error("Error fetching users:", err);
+                setLoadingUsers(false)
+
             }
         };
         fetchUsers();
@@ -381,7 +387,21 @@ const Home = () => {
 
                     {/* Users Contact Directory List */}
                     <div className="space-y-1 overflow-y-auto flex-1 pr-1 custom-scrollbar">
-                        {filteredUsersList.length === 0 ? (
+                        {loadingUsers ? (
+                            [...Array(6)].map((_, index) => (
+                                <div
+                                    key={index}
+                                    className="p-3 rounded-xl flex items-center gap-3 animate-pulse"
+                                >
+                                    <div className="h-9 w-9 rounded-xl bg-slate-700"></div>
+
+                                    <div className="flex-1">
+                                        <div className="h-3 bg-slate-700 rounded w-32 mb-2"></div>
+                                        <div className="h-2 bg-slate-800 rounded w-20"></div>
+                                    </div>
+                                </div>
+                            ))
+                        ) : filteredUsersList.length === 0 ? (
                             <p className="text-xs text-slate-600 text-center py-4 italic">No users found</p>
                         ) : (
                             filteredUsersList.map((u) => {
