@@ -6,6 +6,7 @@ import { Check, CheckCheck, Menu, X, Search, LogOut } from 'lucide-react';
 import EmojiPicker from "emoji-picker-react";
 import { Smile } from "lucide-react";
 import useTimeFormat from "../hook/useTimeFormat";
+import chat_img from "../../public/chat-logo.png"
 const BASE_URL = import.meta.env.VITE_BASE_URL;
 const BASE_URL_SOCKET = import.meta.env.VITE_BASE_URL_SOCKET;
 
@@ -347,12 +348,13 @@ const Home = () => {
                     {/* Header Controls */}
                     <div className="flex items-center justify-between mb-5 flex-shrink-0">
                         <div className="flex items-center gap-2.5">
-                            <div className="h-9 w-9 bg-indigo-600 rounded-xl flex items-center justify-center font-black text-white text-lg shadow-md shadow-indigo-600/20">
+                            {/* <div className="h-9 w-9 bg-indigo-600 rounded-xl flex items-center justify-center font-black text-white text-lg shadow-md shadow-indigo-600/20">
                                 C
                             </div>
                             <h2 className="text-xl font-bold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
                                 Chatly
-                            </h2>
+                            </h2> */}
+                            <img className="h-10 w-full" src={chat_img} alt="" />
                         </div>
                         <button className="md:hidden p-1.5 text-slate-400 hover:text-white bg-slate-900 rounded-lg" onClick={() => setIsSidebarOpen(false)}>
                             <X size={18} />
