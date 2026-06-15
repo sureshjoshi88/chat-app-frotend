@@ -346,15 +346,12 @@ const Home = () => {
             `}>
                 <div className="flex flex-col h-full overflow-hidden">
                     {/* Header Controls */}
-                    <div className="flex items-center justify-between mb-5 flex-shrink-0">
+                    <div className="flex items-center justify-between mb-2 flex-shrink-0">
                         <div className="flex items-center gap-2.5">
-                            {/* <div className="h-9 w-9 bg-indigo-600 rounded-xl flex items-center justify-center font-black text-white text-lg shadow-md shadow-indigo-600/20">
-                                C
-                            </div>
-                            <h2 className="text-xl font-bold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
-                                Chatly
-                            </h2> */}
-                            <img className="h-10 w-full" src={chat_img} alt="" />
+                            <img className="h-10 w-full" src={chat_img} alt="SYAR Logo Icon" />
+                            <h2 className="text-xl font-bold tracking-tight text-white">
+                                SYAR
+                            </h2>
                         </div>
                         <button className="md:hidden p-1.5 text-slate-400 hover:text-white bg-slate-900 rounded-lg" onClick={() => setIsSidebarOpen(false)}>
                             <X size={18} />
